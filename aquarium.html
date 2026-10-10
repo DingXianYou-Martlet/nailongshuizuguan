@@ -21,35 +21,10 @@
       display: block;
       touch-action: manipulation;
     }
-    /* 竖屏时提示转横屏 */
-    #rotate {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: #0a1a2f;
-      color: #fff;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-      text-align: center;
-    }
-    #rotate .phone { font-size: 56px; }
-    #rotate .title { font-size: 24px; margin-top: 14px; }
-    #rotate .sub { font-size: 15px; margin-top: 8px; opacity: .7; }
-    @media (orientation: portrait) {
-      #rotate { display: flex; }
-      canvas { display: none; }
-    }
   </style>
 </head>
 <body>
   <canvas id="game"></canvas>
-  <div id="rotate">
-    <div class="phone">📱🔄</div>
-    <div class="title">请横屏游玩</div>
-    <div class="sub">把手机横过来，体验更好</div>
-  </div>
   <script>
     // ============================================================
     //  1. 准备工作
@@ -60,15 +35,44 @@
     let W = window.innerWidth;   // 虚拟坐标宽（游戏逻辑用）
     let H = window.innerHeight;
     let S = 1;                   // 界面缩放比例（小屏时缩小）
+    let portrait = false;        // 是否竖屏（竖屏时把画布转 90°，仍按横屏呈现）
+    let shortSide = 0;           // 短边长度（竖屏输入逆变换用）
 
     function applySize() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      portrait = h > w;                 // 竖屏判断（高 > 宽）
+      const vw = portrait ? h : w;      // 游戏宽 = 较长边
+      const vh = portrait ? w : h;      // 游戏高 = 较短边
+      shortSide = vh;
+
       // 横屏小屏适当缩小；桌面大屏保持 1（不放大）
-      S = clamp(Math.min(window.innerWidth / 1100, window.innerHeight / 520), 0.45, 1);
-      W = window.innerWidth / S;
-      H = window.innerHeight / S;
+      S = clamp(Math.min(vw / 1100, vh / 520), 0.45, 1);
+      W = vw / S;
+      H = vh / S;
+
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = Math.round(window.innerWidth * dpr);   // 实际像素，保证清晰
-      canvas.height = Math.round(window.innerHeight * dpr);
+      canvas.width = Math.round(vw * dpr);   // 实际像素，保证清晰
+      canvas.height = Math.round(vh * dpr);
+
+      // 竖屏时把画布顺时针转 90° 铺满屏幕，让游戏始终横屏呈现
+      if (portrait) {
+        canvas.style.transform = 'rotate(90deg)';
+        canvas.style.transformOrigin = 'top left';
+        canvas.style.width = vw + 'px';
+        canvas.style.height = vh + 'px';
+        canvas.style.position = 'fixed';
+        canvas.style.top = '0';
+        canvas.style.left = vh + 'px';
+      } else {
+        canvas.style.transform = '';
+        canvas.style.transformOrigin = '';
+        canvas.style.width = '100vw';
+        canvas.style.height = '100vh';
+        canvas.style.position = '';
+        canvas.style.top = '';
+        canvas.style.left = '';
+      }
     }
     applySize();
     window.addEventListener('resize', applySize);
@@ -76,10 +80,13 @@
 
     function toGameXY(e) {
       const rect = canvas.getBoundingClientRect();
-      return {
-        x: (e.clientX - rect.left) * (W / rect.width),
-        y: (e.clientY - rect.top) * (H / rect.height),
-      };
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+      if (portrait) {
+        // 竖屏时画布被转了 90°，这里做逆变换，让点击位置和游戏坐标对得上
+        return { x: cy / S, y: (shortSide - cx) / S };
+      }
+      return { x: cx * (W / rect.width), y: cy * (H / rect.height) };
     }
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
