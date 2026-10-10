@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>奶系水族馆</title>
   <style>
     body {
@@ -19,11 +19,37 @@
       width: 100vw;
       height: 100vh;
       display: block;
+      touch-action: manipulation;
+    }
+    /* 竖屏时提示转横屏 */
+    #rotate {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #0a1a2f;
+      color: #fff;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      text-align: center;
+    }
+    #rotate .phone { font-size: 56px; }
+    #rotate .title { font-size: 24px; margin-top: 14px; }
+    #rotate .sub { font-size: 15px; margin-top: 8px; opacity: .7; }
+    @media (orientation: portrait) {
+      #rotate { display: flex; }
+      canvas { display: none; }
     }
   </style>
 </head>
 <body>
   <canvas id="game"></canvas>
+  <div id="rotate">
+    <div class="phone">📱🔄</div>
+    <div class="title">请横屏游玩</div>
+    <div class="sub">把手机横过来，体验更好</div>
+  </div>
   <script>
     // ============================================================
     //  1. 准备工作
@@ -31,16 +57,22 @@
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
 
-    let W = window.innerWidth;   // 让画布铺满整个窗口
+    let W = window.innerWidth;   // 虚拟坐标宽（游戏逻辑用）
     let H = window.innerHeight;
-    canvas.width = W;
-    canvas.height = H;
-    window.addEventListener('resize', function () {
-      W = window.innerWidth;
-      H = window.innerHeight;
-      canvas.width = W;
-      canvas.height = H;
-    });
+    let S = 1;                   // 界面缩放比例（小屏时缩小）
+
+    function applySize() {
+      // 横屏小屏适当缩小；桌面大屏保持 1（不放大）
+      S = clamp(Math.min(window.innerWidth / 1100, window.innerHeight / 520), 0.45, 1);
+      W = window.innerWidth / S;
+      H = window.innerHeight / S;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(window.innerWidth * dpr);   // 实际像素，保证清晰
+      canvas.height = Math.round(window.innerHeight * dpr);
+    }
+    applySize();
+    window.addEventListener('resize', applySize);
+    window.addEventListener('orientationchange', applySize);
 
     function toGameXY(e) {
       const rect = canvas.getBoundingClientRect();
@@ -682,6 +714,8 @@
     }
 
     function draw() {
+      const dpr = window.devicePixelRatio || 1;
+      ctx.setTransform(S * dpr, 0, 0, S * dpr, 0, 0);   // 虚拟坐标 → 屏幕（缩放 + 高清）
       drawBackground();
 
       // 选中生物的高亮圈 + 名字
