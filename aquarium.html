@@ -541,14 +541,11 @@
       ctx.fillStyle = '#5a3a18';
       ctx.fillRect(0, BAR_H - 8, W, 8);
 
-      // 金币、数量、最高等级
+      // 生物数量（金币和目前等级已移到最下面）
       ctx.textAlign = 'left';
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 22px "Microsoft YaHei", sans-serif';
-      ctx.fillText('💰 ' + money, 12, 34);
       ctx.font = '14px "Microsoft YaHei", sans-serif';
-      ctx.fillText('🐟 ' + creatures.length + '/' + capacity(), 12, 58);
-      ctx.fillText('最高 ' + creatureName(maxLevel, maxStage), 12, 80);
+      ctx.fillText('🐟 ' + creatures.length + '/' + capacity(), 12, 34);
 
       // 11 张购买卡片（升阶后卡片槽整体镀金光）
       const golden = maxStage >= 2;
@@ -634,6 +631,15 @@
       ctx.fillText('花钱找罪受', suf.x + suf.w / 2, suf.y + 20);
       ctx.font = '12px "Microsoft YaHei", sans-serif';
       ctx.fillText('💰100亿', suf.x + suf.w / 2, suf.y + 42);
+
+      // 金币数量和目前等级（花钱找罪受按钮右边，中间偏左）
+      const hx = suf.x + suf.w + 10;
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 18px "Microsoft YaHei", sans-serif';
+      ctx.fillText('💰 ' + money, hx, H - 30);
+      ctx.font = '13px "Microsoft YaHei", sans-serif';
+      ctx.fillText('最高 ' + creatureName(maxLevel, maxStage), hx, H - 12);
     }
 
     function drawUpgradeButton() {
