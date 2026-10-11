@@ -173,6 +173,7 @@
     let selected = null;           // 选中的生物（准备合成）
     let mouse = { x: W / 2, y: H / 2 };
     let frame = 0;
+    let lastTime = Date.now();     // 上一帧的时刻（用于后台按真实时间产出）
     let maxLevel = 0;              // 最高拥有过的等级
     let maxStage = 1;              // 已解锁的最高阶段（卡片槽显示这一阶段，价格/产币随之提高）
     let showHelp = true;           // 是否显示新手说明
@@ -221,7 +222,7 @@
       };
     }
 
-    function updateCreatures() {
+    function updateCreatures(dt) {
       for (let c of creatures) {
         // 慢慢转向，游起来自然
         c.angle += (Math.random() - 0.5) * 0.08;
@@ -235,13 +236,18 @@
         if (c.y < TANK_TOP + r) { c.y = TANK_TOP + r; c.angle = -c.angle; }
         if (c.y > tankBottom() - r) { c.y = tankBottom() - r; c.angle = -c.angle; }
 
-        // 产金币
-        c.coinTimer--;
+        // 产金币：按真实时间累积，切到后台也会继续产出
+        c.coinTimer -= dt * 60;
         if (c.coinTimer <= 0) {
-          c.coinTimer = coinInterval(c.level) * 60;
-          const v = coinValue(c.level, c.stage);
-          money = Math.min(MAX_MONEY, money + v);
-          texts.push({ x: c.x, y: c.y - r, text: '+' + v, life: 55, color: '#ffd23e' });
+          let gained = 0;
+          while (c.coinTimer <= 0) {
+            c.coinTimer += coinInterval(c.level) * 60;
+            gained += coinValue(c.level, c.stage);
+          }
+          if (gained > 0) {
+            money = Math.min(MAX_MONEY, money + gained);
+            texts.push({ x: c.x, y: c.y - r, text: '+' + gained, life: 55, color: '#ffd23e' });
+          }
         }
       }
 
@@ -744,7 +750,12 @@
     // ============================================================
     function update() {
       frame++;
-      updateCreatures();
+      // 距上一帧的真实秒数（切到后台 rAF 暂停，回来第一帧会补上这段时间的产出）
+      let dt = (Date.now() - lastTime) / 1000;
+      lastTime = Date.now();
+      if (dt < 0) dt = 0;
+      dt = Math.min(dt, 8 * 3600);   // 后台产出最多补 8 小时
+      updateCreatures(dt);
       for (let b of bubbles) {
         b.y -= b.speed;
         if (b.y < -20) Object.assign(b, spawnBubble());
