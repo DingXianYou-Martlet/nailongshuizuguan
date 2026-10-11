@@ -165,7 +165,7 @@
     // ============================================================
     const MAX_MONEY = 200000000000; // 金币上限：2000亿
     const SUFFER_COST = 10000000000; // 花钱找罪受：100亿
-    let money = 200;                // 初始金币
+    let money = 500;                // 初始金币
     let creatures = [];            // 鱼缸里的所有生物
     let texts = [];                // 飘字（+金币、进化提示等）
     let bubbles = [], rays = [], weeds = [];
@@ -861,7 +861,7 @@
       if (!raw) return;
       try {
         const d = JSON.parse(raw);
-        money = (typeof d.money === 'number') ? d.money : 200;
+        money = (typeof d.money === 'number') ? d.money : 500;
         maxLevel = (typeof d.maxLevel === 'number') ? d.maxLevel : 0;
         maxStage = (typeof d.maxStage === 'number') ? d.maxStage : 1;
         tankLevel = (typeof d.tankLevel === 'number') ? d.tankLevel : 1;
@@ -884,7 +884,7 @@
 
     function resetGame() {
       try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
-      money = 200;
+      money = 500;
       creatures = [];
       maxLevel = 0;
       maxStage = 1;
